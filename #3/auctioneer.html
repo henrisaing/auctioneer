@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLD!</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- StAuth10222: I Henri Saing, 000132162 certify that this material is my original work. No other person's work has been used without due acknowledgement. I have not made my work available to anyone else.
+ -->
+ <style>
+ </style>
+</head>
+<body>
+    <div id="container">
+        <h2>Auctioneer</h2>
+        <div id="currentAuction">
+            <h3>Current Auction</h3>
+            <div id="time-receiver">1</div>
+            <div id="current"></div>
+            <div id="top-bidder" class="big"></div>
+            <div id="table-div">
+                <table id="bids">
+                </table>
+                <table id="history">
+                </table>
+            </div>
+        </div>
+        <div id="form-div">
+        <form action="" id="auction">
+            <label for="time">Time:</label><span id="timer"></span>seconds <input type="range" name="time" id="time" min="10" max="80" step="10" value="30"> <br/>
+            <label for="item">Item:</label> <input type="text" name="item" id="item"> <br/>
+            <label for="time">Minimum Bid:</label> <input type="number" name="minBid" id="minBid" min="1" value="1"> <br/>
+            <input type="submit" value="Start Auction" id="start">
+        </form>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        var socket = io();
+        var auctionActive = false;
+
+        socket.on('updateBids', function(data){
+            $('#top-bidder').html(`Top Bid: $${data[1]['bid']} (${data[1]['name']}) <br/> ${ Object.keys(data[0]).length} bidders, ${data[2]} bids in total`);
+            $('#bids').html("<tbody><tr><th colspan=2>Highest Bids</th></tr><tr><th>Bidder</th><th>Highest Bid</th></tr></tbody>");
+            $('#history').html("<tr></tr>");
+            for(const name in data[0]){
+                $('#bids tr:last').after(`<tr><td>${name}</td><td>${data[0][name][0]}</td></tr>`);
+            }
+            for(const index in data[3]){
+                $('#history tr:first').before(`<tr><td>${data[3][index][0]}</td><td>${data[3][index][1]}</td></tr>`);
+            }
+            // console.log(data);
+        });
+
+        $('#auction').submit(function(){
+            auctionActive = true;
+            if($('#item').val().trim() == ""){
+                $('#item').val("No Item Name Entered");
+            }
+            socket.emit("startAuction", {
+                time: $('#time').val(),
+                item: $('#item').val(),
+                minBid: $('#minBid').val(),
+            });
+
+            $('#time-receiver').html($('#time').val());
+            $currentAuction = "Current auction is for " 
+                                + $('#item').val()
+                                + ".<br/>Bidding starts at $"
+                                + $('#minBid').val();
+            $('#current').html($currentAuction);
+            $('#bids').html('');
+            $('#top-bidder').html('');
+            $('#form-div').hide();
+
+            return false;
+        });
+
+        $('#timer').html($('#time').val());
+        $('#time').change(function(){
+            $('#timer').html($('#time').val());
+        });
+
+        $('#minBid').change(function(){
+            var bid = parseInt($('#minBid').val());
+
+            if(isNaN(bid) || bid < 1){
+                $('#minBid').val("1");
+            }
+        });
+
+        //timer, always running
+        function updateTimer(){
+            var time = parseInt($('#time-receiver').html());
+
+            if(!isNaN(time)){
+                time -=1;
+                $('#time-receiver').html(time);
+                $('#item').attr('readonly', true);
+                $('#minBid').attr('readonly', true);
+                $('#start').attr('disabled', 'disabled');
+
+                if(time < 1){
+                    $('#time-receiver').html("Auction over. You may start another auction.");
+                    $('#form-div').show();
+                }
+            }else{
+                $('#item').attr('readonly', false);
+                $('#minBid').attr('readonly', false);
+                $('#start').attr('disabled', false);
+
+                //should be using on change event listener
+                //this is just quick and dirty implementation
+                if($('#item').val().trim() == ""){
+                        $('#start').attr('disabled', true);
+                    }else{
+                        $('#start').attr('disabled', false);
+                    }
+                if(auctionActive){
+                    socket.emit('endAuction');
+                    $('#item').val('');
+                    auctionActive = false;
+                }
+            }
+            
+            setTimeout(updateTimer, 1000);
+        }
+
+        updateTimer();
+    </script>
+</body>
+</html>

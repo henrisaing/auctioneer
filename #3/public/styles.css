@@ -1,0 +1,49 @@
+/* StAuth10222: I Henri Saing, 000132162 certify that this material is my original work. No other person's work has been used without due acknowledgement. I have not made my work available to anyone else. */
+#container{
+    width:90%;
+    height:90%;
+    border:2px solid black;
+    border-radius: 80px 80px 80px 0px;
+    text-align: center;
+    padding: 30px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.red-text{
+    color:red;
+}
+
+.green-text{
+    color:green;
+}
+
+.big{
+    font-size: 1.5em;
+}
+
+.input-hide{
+    border:none;
+}
+
+table{
+    margin-top: 10px;
+    margin-left:auto;
+    margin-right:auto;
+    border:1px solid gray;
+    /* border-collapse: collapse; */
+    border-radius: 10px 10px 10px 0px;
+    border-spacing: 0;
+    border-collapse: separate;
+    border: var(--border);
+    overflow: hidden;
+    border: 0;
+
+    /* Use the spread value on the box-shadow to set the border width. */
+    box-shadow: 0 0 0 1px black;
+}
+th, td{
+    border:1px solid gray;
+    padding: 5px;
+}

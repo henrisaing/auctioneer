@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLD!</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- StAuth10222: I Henri Saing, 000132162 certify that this material is my original work. No other person's work has been used without due acknowledgement. I have not made my work available to anyone else.
+ -->
+</head>
+<body>
+    <div id="container">
+        <h2>Bidder</h2>
+        <div id="time-receiver">1</div>
+        <div id="auction-receiver"></div>
+        <div id="broadcast-receiver"></div>
+        <div id="bid-form">
+            <form action="" id="bid-form">
+                <label for="name" id="label-name">Name:</label><input type="text" id="name" name="name"><button id="save-name">Save Name</button> <br/>
+                <label for="bid">Bid:</label><input type="number" id="bid" name="bid" min="1" readonly="true" value="1">
+                <input type="submit" value="Please Input Name to Bid" id="submit" disabled="disabled">
+            </form>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        var socket = io();
+        auctionActive = false;
+
+        socket.on('sendAuction', function(data){
+            $('#time-receiver').html(data.time);
+            $('#broadcast-receiver').html('');
+            auctionActive = true;
+
+            $currentAuction = "Current item is: "
+                                + data.item
+                                + ".<br/>Bidding starts at $"
+                                + data.minBid;
+            $('#auction-receiver').html($currentAuction);
+            $('#bid').val(data.minBid);
+            $('#bid').attr('min', data.minBid);
+            if($('#name').val().trim() != "" && $('#save-name').prop('disabled') == true){
+                $('#bid').attr('readonly', false);
+                $('#submit').attr('disabled', false);
+                $('#submit').val('Send Bid');
+            }else{
+                console.log('not hit?');
+            }
+        });
+
+        socket.on('sendInfo', function(data){
+            // console.log('send test client');
+            // console.log(socket.id);
+            if(data == 'Bid too low'){
+                $('#broadcast-receiver').addClass("red-text");
+                $('#broadcast-receiver').removeClass("green-text");
+            }else{
+                $('#broadcast-receiver').removeClass("red-text");
+                $('#broadcast-receiver').addClass("green-text");
+            }
+            $('#broadcast-receiver').html(data);
+        });
+
+        socket.on('closeAuction', function(data){
+            // $('#auction-reciever').html("TEST CLOSE AUTION");
+            $('#auction-receiver').html(`<span class="big">SOLD!</span> to ${data['name']} for $${data['bid']}`);
+            console.log('close auction');
+        });
+
+        $('#save-name').click(function(){
+            if($('#name').val().trim() == ""){
+                $('#name').val(socket.id);
+            }
+            $('#label-name').html("Welcome ");
+            $('#name').attr('readonly', true);
+            $('#name').addClass('input-hide');
+            $('#save-name').html('Saved');
+            $('#save-name').attr('disabled', true);
+            $('#bid').attr('readonly', false);
+            $('#submit').attr('disabled', false);
+            $('#submit').val('Send Bid');
+
+            return false;
+        });
+        $('#bid-form').submit(function(){
+
+            socket.emit('sendBid', {
+                name: $('#name').val(),
+                bid: $('#bid').val()
+            });
+
+            // $('#bid').attr('readonly', true);
+            // $('#submit').val('Bid Locked In');
+            // $('#submit').attr('disabled', 'disabled');
+
+            return false;
+        });
+
+        //timer, always running
+        function updateTimer(){
+            var time = parseInt($('#time-receiver').html());
+
+            if(!isNaN(time)){
+                time -=1;
+                $('#time-receiver').html(time);
+
+                if(time < 1){
+                    $('#time-receiver').html("Times up! Waiting for next auction.");
+                }
+
+            }else{
+                $('#bid').attr('readonly', true);
+                $('#submit').val('No Active Auction');
+                $('#submit').attr('disabled', 'disabled');
+            }
+            
+            setTimeout(updateTimer, 1000);
+        }
+
+        updateTimer();
+    </script>
+</body>
+</html>
